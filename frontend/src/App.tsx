@@ -1,0 +1,18 @@
+import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+
+import { CheckoutPage } from './pages/CheckoutPage'
+import { NotFoundPage } from './pages/NotFoundPage'
+
+const router = createBrowserRouter([
+  { path: '/', element: <CheckoutPage screen="product" /> },
+  { path: '/checkout', element: <CheckoutPage screen="payment" /> },
+  { path: '/summary', element: <CheckoutPage screen="summary" /> },
+  { path: '/payment-result', element: <CheckoutPage screen="result" /> },
+  { path: '*', element: <NotFoundPage /> },
+])
+
+function App() {
+  return <RouterProvider router={router} />
+}
+
+export default App
