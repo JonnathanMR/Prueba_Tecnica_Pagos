@@ -127,11 +127,27 @@ La aplicación **no almacena** número completo de tarjeta (PAN), CVV ni fecha d
 
 ## Primeros pasos
 
-_TODO — Se agregará una vez que las estructuras base del backend y frontend estén listas._
+1. Inicia PostgreSQL desde la raíz del repositorio:
+
+   ```bash
+   docker compose up -d database
+   ```
+
+2. Configura e inicializa el backend:
+
+   ```bash
+   cd backend
+   cp .env.example .env
+   npm install
+   npm run database:setup
+   npm run start:dev
+   ```
+
+`database:setup` ejecuta las migraciones pendientes y carga tres productos ficticios con sus existencias. El seed es idempotente: se puede repetir sin crear productos duplicados.
 
 ## Variables de entorno
 
-_TODO — Se agregará un archivo `.env.example` por cada paquete (backend/frontend) una vez que las integraciones estén conectadas._
+El backend incluye [`.env.example`](backend/.env.example) con las credenciales locales de PostgreSQL. No subas el archivo `.env`; contiene los valores de cada entorno.
 
 ## Documentación de la API
 
