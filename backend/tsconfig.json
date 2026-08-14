@@ -7,10 +7,14 @@
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "target": "ES2023",
+    "types": ["node"],
     "sourceMap": true,
+    "rootDir": "./src",
     "outDir": "./dist",
     "baseUrl": "./",
+    "ignoreDeprecations": "6.0",
     "incremental": true,
+    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.tsbuildinfo",
     "strict": true,
     "skipLibCheck": true
   }
