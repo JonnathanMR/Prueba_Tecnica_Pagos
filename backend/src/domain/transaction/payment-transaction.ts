@@ -107,6 +107,20 @@ export class PaymentTransaction {
     });
   }
 
+  registerProviderReference(
+    providerTransactionId: string,
+    updatedAt = new Date(),
+  ): PaymentTransaction {
+    this.ensurePending();
+    requireNonEmpty(providerTransactionId, 'Provider transaction ID');
+
+    return new PaymentTransaction({
+      ...this,
+      providerTransactionId,
+      updatedAt,
+    });
+  }
+
   reject(
     status: 'DECLINED' | 'ERROR' | 'VOIDED',
     failureCode: string | null,
