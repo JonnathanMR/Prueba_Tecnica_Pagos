@@ -35,12 +35,12 @@ Este proyecto implementa el flujo de *onboarding* para un cliente que compra un 
 
 ```
 .
-├── backend/     # API de NestJS — capas de dominio / aplicación / infraestructura
+├── backend/     # API NestJS — src/domain, src/application, src/infrastructure
 ├── frontend/    # React SPA — store de Redux Toolkit, UI mobile-first
 └── README.md
 ```
 
-_(Cada paquete tiene su propio README con instrucciones de configuración una vez estructurado el proyecto)._
+El backend inicia con `npm install` y `npm run start:dev` desde `backend/`. Sus adaptadores HTTP viven en `src/infrastructure/http`, los casos de uso en `src/application` y el dominio permanece independiente del framework en `src/domain`.
 
 ## Flujo de negocio
 
