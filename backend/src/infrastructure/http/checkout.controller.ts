@@ -26,6 +26,7 @@ import {
 import { GetTransactionUseCase } from '../../application/checkout/get-transaction.use-case';
 import { CreateTransactionUseCase } from '../../application/checkout/create-transaction.use-case';
 import { ProcessPaymentUseCase } from '../../application/checkout/process-payment.use-case';
+import { RefreshPaymentStatusUseCase } from '../../application/checkout/refresh-payment-status.use-case';
 import { PAYMENT_GATEWAY } from '../../application/checkout/checkout.module';
 import type { PaymentGatewayPort } from '../../domain/transaction/payment-gateway.port';
 import type { PaymentTransaction } from '../../domain/transaction/payment-transaction';
@@ -41,6 +42,7 @@ export class CheckoutController {
     private readonly createTransaction: CreateTransactionUseCase,
     private readonly getTransaction: GetTransactionUseCase,
     private readonly processPayment: ProcessPaymentUseCase,
+    private readonly refreshPaymentStatus: RefreshPaymentStatusUseCase,
     @Inject(PAYMENT_GATEWAY) private readonly paymentGateway: PaymentGatewayPort,
   ) {}
 
@@ -108,6 +110,9 @@ export class CheckoutController {
   @ApiOkResponse({ description: 'Returns the transaction and delivery status.' })
   @ApiNotFoundResponse({ description: 'The transaction does not exist.' })
   async get(@Param('transactionId', new ParseUUIDPipe()) transactionId: string): Promise<{ data: TransactionResponse }> {
+    const refreshResult = await this.refreshPaymentStatus.execute(transactionId);
+    if (!refreshResult.ok) throwResult(refreshResult.error.code, refreshResult.error.message);
+
     const result = await this.getTransaction.execute(transactionId);
     if (!result.ok) throwResult(result.error.code, result.error.message);
     return { data: toTransactionResponse(result.value.transaction, result.value.delivery) };

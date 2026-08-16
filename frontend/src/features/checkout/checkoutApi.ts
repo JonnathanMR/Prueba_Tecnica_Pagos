@@ -13,10 +13,32 @@ export interface TokenizedCard {
   readonly lastFour: string
 }
 
-interface TransactionResponse {
+export type TransactionStatus = 'PENDING' | 'APPROVED' | 'DECLINED' | 'ERROR' | 'VOIDED'
+
+export interface TransactionResponse {
   readonly id: string
   readonly reference: string
-  readonly status: 'PENDING' | 'APPROVED' | 'DECLINED' | 'ERROR' | 'VOIDED'
+  readonly status: TransactionStatus
+  readonly amounts: {
+    readonly productInCents: number
+    readonly baseFeeInCents: number
+    readonly shippingFeeInCents: number
+    readonly totalInCents: number
+  }
+  readonly paymentMethod: {
+    readonly type: 'CARD'
+    readonly cardBrand: SafeCardBrand | 'UNKNOWN'
+    readonly cardLastFour: string
+  } | null
+  readonly failure: {
+    readonly code: string | null
+    readonly message: string | null
+  }
+  readonly delivery: {
+    readonly status: string
+    readonly city: string
+    readonly department: string
+  }
 }
 
 interface ApiEnvelope<T> {
@@ -91,6 +113,13 @@ export async function processPayment(input: ProcessPaymentInput): Promise<Transa
   return request<TransactionResponse>(`/api/checkout/transactions/${encodeURIComponent(transactionId)}/payments`, {
     method: 'POST',
     body: JSON.stringify({ ...body, installments: 1 }),
+  })
+}
+
+export async function getTransaction(transactionId: string, signal?: AbortSignal): Promise<TransactionResponse> {
+  return request<TransactionResponse>(`/api/checkout/transactions/${encodeURIComponent(transactionId)}`, {
+    cache: 'no-store',
+    signal,
   })
 }
 
