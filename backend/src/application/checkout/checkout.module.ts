@@ -33,8 +33,9 @@ export const PAYMENT_GATEWAY = Symbol('PAYMENT_GATEWAY');
     },
     {
       provide: ListProductsUseCase,
-      useFactory: (productRepository) => new ListProductsUseCase(productRepository),
-      inject: [PRODUCT_REPOSITORY],
+      useFactory: (productRepository, stockRepository) =>
+        new ListProductsUseCase(productRepository, stockRepository),
+      inject: [PRODUCT_REPOSITORY, STOCK_REPOSITORY],
     },
     {
       provide: UpdateStockUseCase,
