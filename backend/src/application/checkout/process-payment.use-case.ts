@@ -23,6 +23,10 @@ export interface ProcessPaymentInput {
   readonly transactionId: EntityId;
   readonly cardToken: string;
   readonly paymentMethod: PaymentMethodSnapshot;
+  readonly installments: number;
+  readonly acceptanceToken: string;
+  readonly acceptPersonalAuth: string;
+  readonly customerIp: string;
 }
 
 export interface ProcessPaymentOutput {
@@ -77,6 +81,10 @@ export class ProcessPaymentUseCase {
         customerEmail: customer.email,
         cardToken: input.cardToken,
         idempotencyKey: transaction.idempotencyKey,
+        installments: input.installments,
+        acceptanceToken: input.acceptanceToken,
+        acceptPersonalAuth: input.acceptPersonalAuth,
+        customerIp: input.customerIp,
       });
       const now = this.dependencies.now();
 
