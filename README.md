@@ -202,6 +202,18 @@ Orden sugerido para probar el flujo: `List active products` → `Get acceptance 
 
 ## Pruebas (Testing)
 
+### Tarjetas de prueba
+
+Usa estos datos únicamente en el entorno sandbox. No ingreses ni compartas tarjetas reales, incluso en capturas de pantalla o colecciones de Postman.
+
+| Uso | Franquicia | Número | Vencimiento | CVC | Resultado esperado |
+|---|---|---|---|---|---|
+| Flujo sandbox de aprobación | Visa | `4242 4242 4242 4242` | Cualquier fecha futura | Cualquier 3 dígitos | `APPROVED` |
+| Flujo sandbox de rechazo | Visa | `4111 1111 1111 1111` | Cualquier fecha futura | Cualquier 3 dígitos | `DECLINED` |
+| Validación visual local | Mastercard | `5555 5555 5555 4444` | Fecha futura, por ejemplo `12/30` | `123` | El formulario reconoce la franquicia y supera Luhn; no la envíes al sandbox. |
+
+El proveedor solo publica las dos tarjetas Visa anteriores para su flujo sandbox directo; cualquier otra tarjeta puede finalizar en `ERROR`. La tarjeta Mastercard de la tabla sirve exclusivamente para comprobar la detección y validación local de la interfaz. Consulta los [datos de prueba oficiales de sandbox](https://docs.wompi.co/docs/colombia/datos-de-prueba-en-sandbox/) antes de realizar una prueba de pago.
+
 _TODO — Aquí se documentará el informe de cobertura (backend y frontend)._
 
 ## Despliegue en vivo
