@@ -6,9 +6,11 @@ import { useAppDispatch, useAppSelector } from '../app/hooks'
 import {
   type DeliveryDraft,
   moveToStep,
+  saveCustomerEmail,
   saveDeliveryDraft,
   savePaymentDraft,
 } from '../features/checkout/checkoutSlice'
+import { tokenizeCard, type TokenizedCard } from '../features/checkout/checkoutApi'
 import {
   detectCardBrand,
   digitsOnly,
@@ -18,6 +20,7 @@ import {
   isValidLuhn,
   type CardBrand,
 } from '../features/payments/cardValidation'
+import { saveEphemeralPaymentSession } from '../features/payments/ephemeralPaymentSession'
 
 interface CardSummary {
   readonly brand: Exclude<CardBrand, 'UNKNOWN'>
@@ -35,8 +38,10 @@ export function PaymentAndDeliveryPage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const savedDelivery = useAppSelector((state) => state.checkout.delivery)
+  const savedCustomerEmail = useAppSelector((state) => state.checkout.customerEmail)
   const savedPayment = useAppSelector((state) => state.checkout.payment)
   const [delivery, setDelivery] = useState<DeliveryDraft>(savedDelivery)
+  const [customerEmail, setCustomerEmail] = useState(savedCustomerEmail)
   const [card, setCard] = useState<CardSummary | null>(
     savedPayment.cardBrand && savedPayment.cardLastFour
       ? { brand: savedPayment.cardBrand, lastFour: savedPayment.cardLastFour }
@@ -50,6 +55,7 @@ export function PaymentAndDeliveryPage() {
   }, [dispatch])
 
   const isDeliveryComplete = Object.values(delivery).every((value) => value.trim().length > 0) && /^\d{10}$/.test(delivery.phone)
+  const hasValidEmail = /^\S+@\S+\.\S+$/.test(customerEmail)
 
   function updateDelivery(field: keyof DeliveryDraft, value: string): void {
     const nextDelivery = {
@@ -60,10 +66,15 @@ export function PaymentAndDeliveryPage() {
     dispatch(saveDeliveryDraft(nextDelivery))
   }
 
+  function updateCustomerEmail(value: string): void {
+    setCustomerEmail(value)
+    dispatch(saveCustomerEmail(value))
+  }
+
   function continueToSummary(event: React.FormEvent<HTMLFormElement>): void {
     event.preventDefault()
     setShowDeliveryErrors(true)
-    if (!isDeliveryComplete || !card) return
+    if (!isDeliveryComplete || !hasValidEmail || !card) return
 
     dispatch(saveDeliveryDraft(delivery))
     navigate('/summary')
@@ -132,6 +143,7 @@ export function PaymentAndDeliveryPage() {
           <div className="form-grid">
             <Field label="Nombre de quien recibe" value={delivery.recipientName} onChange={(value) => updateDelivery('recipientName', value)} error={showDeliveryErrors && !delivery.recipientName.trim()} autoComplete="name" />
             <Field label="Celular" value={delivery.phone} onChange={(value) => updateDelivery('phone', value)} error={showDeliveryErrors && !/^\d{10}$/.test(delivery.phone)} inputMode="numeric" autoComplete="tel" hint="10 dígitos" />
+            <Field label="Correo electrónico" value={customerEmail} onChange={updateCustomerEmail} error={showDeliveryErrors && !hasValidEmail} autoComplete="email" type="email" fullWidth />
             <Field label="Dirección" value={delivery.addressLine1} onChange={(value) => updateDelivery('addressLine1', value)} error={showDeliveryErrors && !delivery.addressLine1.trim()} autoComplete="street-address" fullWidth />
             <Field label="Ciudad" value={delivery.city} onChange={(value) => updateDelivery('city', value)} error={showDeliveryErrors && !delivery.city.trim()} autoComplete="address-level2" />
             <Field label="Departamento" value={delivery.department} onChange={(value) => updateDelivery('department', value)} error={showDeliveryErrors && !delivery.department.trim()} autoComplete="address-level1" />
@@ -149,9 +161,10 @@ export function PaymentAndDeliveryPage() {
       {isCardDialogOpen ? (
         <CardDialog
           onClose={() => setIsCardDialogOpen(false)}
-          onSave={(summary) => {
-            setCard(summary)
-            dispatch(savePaymentDraft({ cardBrand: summary.brand, cardLastFour: summary.lastFour }))
+          onSave={(tokenizedCard) => {
+            saveEphemeralPaymentSession(tokenizedCard)
+            setCard({ brand: tokenizedCard.brand, lastFour: tokenizedCard.lastFour })
+            dispatch(savePaymentDraft({ cardBrand: tokenizedCard.brand, cardLastFour: tokenizedCard.lastFour }))
             setIsCardDialogOpen(false)
           }}
         />
@@ -169,9 +182,10 @@ interface FieldProps {
   readonly inputMode?: 'numeric'
   readonly hint?: string
   readonly fullWidth?: boolean
+  readonly type?: 'email'
 }
 
-function Field({ label, value, onChange, error, autoComplete, inputMode, hint, fullWidth }: FieldProps) {
+function Field({ label, value, onChange, error, autoComplete, inputMode, hint, fullWidth, type }: FieldProps) {
   const errorId = `${label.toLowerCase().replaceAll(' ', '-')}-error`
   return (
     <label className={`form-field${fullWidth ? ' form-field--full' : ''}`}>
@@ -181,6 +195,7 @@ function Field({ label, value, onChange, error, autoComplete, inputMode, hint, f
         aria-invalid={error}
         autoComplete={autoComplete}
         inputMode={inputMode}
+        type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
@@ -192,7 +207,7 @@ function Field({ label, value, onChange, error, autoComplete, inputMode, hint, f
 
 interface CardDialogProps {
   readonly onClose: () => void
-  readonly onSave: (summary: CardSummary) => void
+  readonly onSave: (card: TokenizedCard) => void
 }
 
 function CardDialog({ onClose, onSave }: CardDialogProps) {
@@ -201,6 +216,8 @@ function CardDialog({ onClose, onSave }: CardDialogProps) {
   const [expiry, setExpiry] = useState('')
   const [cvc, setCvc] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isTokenizing, setIsTokenizing] = useState(false)
   const closeButton = useRef<HTMLButtonElement>(null)
   const brand = detectCardBrand(number)
   const validNumber = isValidLuhn(number) && brand !== 'UNKNOWN'
@@ -217,11 +234,27 @@ function CardDialog({ onClose, onSave }: CardDialogProps) {
     return () => window.removeEventListener('keydown', closeOnEscape)
   }, [onClose])
 
-  function saveCard(event: React.FormEvent<HTMLFormElement>): void {
+  async function saveCard(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault()
     setSubmitted(true)
     if (!validForm) return
-    onSave({ brand, lastFour: digitsOnly(number).slice(-4) })
+    setSubmitError(null)
+    setIsTokenizing(true)
+
+    try {
+      const tokenizedCard = await tokenizeCard({
+        number: digitsOnly(number),
+        cvc,
+        expMonth: expiry.slice(0, 2),
+        expYear: expiry.slice(3),
+        cardHolder: holder.trim(),
+      })
+      onSave(tokenizedCard)
+    } catch (error: unknown) {
+      setSubmitError(error instanceof Error ? error.message : 'No pudimos validar la tarjeta.')
+    } finally {
+      setIsTokenizing(false)
+    }
   }
 
   return (
@@ -264,7 +297,10 @@ function CardDialog({ onClose, onSave }: CardDialogProps) {
             </label>
           </div>
 
-          <button className="button card-dialog__submit" type="submit">Guardar tarjeta</button>
+          <button className="button card-dialog__submit" disabled={isTokenizing} type="submit">
+            {isTokenizing ? 'Validando tarjeta…' : 'Guardar tarjeta'}
+          </button>
+          {submitError ? <p aria-live="polite" className="field-error">{submitError}</p> : null}
         </form>
       </section>
     </div>

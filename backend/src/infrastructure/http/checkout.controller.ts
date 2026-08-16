@@ -10,6 +10,7 @@ import {
   ParseUUIDPipe,
   Post,
   Req,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -31,6 +32,7 @@ import type { PaymentTransaction } from '../../domain/transaction/payment-transa
 import type { Delivery } from '../../domain/delivery/delivery';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { ProcessPaymentDto, TokenizeCardDto } from './dto/process-payment.dto';
+import { PaymentGatewayError } from '../payments/sandbox-payment-gateway.adapter';
 
 @Controller('checkout')
 @ApiTags('Checkout')
@@ -46,7 +48,11 @@ export class CheckoutController {
   @ApiOperation({ summary: 'Get payment acceptance data' })
   @ApiOkResponse({ description: 'Returns the acceptance tokens and contract links required before payment.' })
   async acceptanceData(): Promise<{ data: Awaited<ReturnType<PaymentGatewayPort['getAcceptanceData']>> }> {
-    return { data: await this.paymentGateway.getAcceptanceData() };
+    try {
+      return { data: await this.paymentGateway.getAcceptanceData() };
+    } catch (error: unknown) {
+      throwGatewayUnavailable(error);
+    }
   }
 
   @Post('cards/tokenize')
@@ -54,8 +60,12 @@ export class CheckoutController {
   @ApiCreatedResponse({ description: 'Returns a short-lived card token. Card data is never persisted.' })
   @ApiBadRequestResponse({ description: 'The card payload is invalid.' })
   async tokenizeCard(@Body() dto: TokenizeCardDto): Promise<{ data: { token: string; brand: string; lastFour: string } }> {
-    const tokenizedCard = await this.paymentGateway.tokenizeCard(dto);
-    return { data: tokenizedCard };
+    try {
+      const tokenizedCard = await this.paymentGateway.tokenizeCard(dto);
+      return { data: tokenizedCard };
+    } catch (error: unknown) {
+      throwGatewayUnavailable(error);
+    }
   }
 
   @Post('transactions')
@@ -210,10 +220,24 @@ function throwResult(code: string, message: string): never {
     INSUFFICIENT_STOCK: HttpStatus.CONFLICT,
     STOCK_VERSION_CONFLICT: HttpStatus.CONFLICT,
     INVALID_TRANSACTION_INPUT: HttpStatus.BAD_REQUEST,
+    PAYMENT_PROCESSING_FAILED: HttpStatus.SERVICE_UNAVAILABLE,
   };
 
   throw new HttpException(
     { error: { code, message } },
     statusByCode[code] ?? HttpStatus.INTERNAL_SERVER_ERROR,
   );
+}
+
+function throwGatewayUnavailable(error: unknown): never {
+  if (error instanceof PaymentGatewayError) {
+    throw new ServiceUnavailableException({
+      error: {
+        code: 'PAYMENT_GATEWAY_UNAVAILABLE',
+        message: 'La pasarela de pagos no está disponible. Inténtalo de nuevo en unos minutos.',
+      },
+    });
+  }
+
+  throw error;
 }

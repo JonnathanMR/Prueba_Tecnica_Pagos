@@ -20,7 +20,7 @@ export function encryptCardAsJwe(input: CardTokenizationInput, publicKeyPem: str
   const initializationVector = randomBytes(12);
   const encryptedKey = publicEncrypt(
     {
-      key: createPublicKey(publicKeyPem),
+      key: createPublicKey(normalizeTokenizationPublicKey(publicKeyPem)),
       padding: constants.RSA_PKCS1_OAEP_PADDING,
       oaepHash: 'sha256',
     },
@@ -50,6 +50,23 @@ export function encryptCardAsJwe(input: CardTokenizationInput, publicKeyPem: str
     toBase64Url(ciphertext),
     toBase64Url(cipher.getAuthTag()),
   ].join('.');
+}
+
+/**
+ * El endpoint de tokenización puede retornar el SPKI como Base64 plano o como
+ * PEM con saltos de línea escapados. OpenSSL requiere un PEM normalizado.
+ */
+function normalizeTokenizationPublicKey(rawKey: string): string {
+  const cleaned = rawKey.replaceAll('\\n', '\n').replaceAll('\r', '').trim()
+
+  if (cleaned.includes('-----BEGIN RSA PUBLIC KEY-----')) return cleaned
+
+  const base64 = cleaned
+    .replace('-----BEGIN PUBLIC KEY-----', '')
+    .replace('-----END PUBLIC KEY-----', '')
+    .replaceAll(/\s/g, '')
+
+  return `-----BEGIN PUBLIC KEY-----\n${base64}\n-----END PUBLIC KEY-----`
 }
 
 function toBase64Url(value: string | Buffer): string {

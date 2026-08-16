@@ -46,6 +46,25 @@ describe('SandboxPaymentGatewayAdapter', () => {
     expect(requestInit.headers).toMatchObject({ Authorization: 'Bearer public-key' });
   });
 
+  it('normalizes a Base64 tokenization key before creating the JWE', async () => {
+    const pemKey = generateKeyPairSync('rsa', { modulusLength: 2048 }).publicKey
+      .export({ type: 'spki', format: 'pem' })
+      .toString();
+    const base64Key = pemKey
+      .replace('-----BEGIN PUBLIC KEY-----', '')
+      .replace('-----END PUBLIC KEY-----', '')
+      .replace(/\s/g, '');
+    const request = fetchMock(
+      jsonResponse({ data: { publicKey: base64Key } }),
+      jsonResponse({ data: { id: 'card-token', brand: 'VISA', last_four: '4242' } }),
+    );
+    const adapter = adapterFor(request);
+
+    await expect(
+      adapter.tokenizeCard({ number: '4242424242424242', cvc: '123', expMonth: '08', expYear: '30', cardHolder: 'Ana Pérez' }),
+    ).resolves.toEqual({ token: 'card-token', brand: 'VISA', lastFour: '4242' });
+  });
+
   it('sends the private key and integrity signature when creating a payment', async () => {
     const request = fetchMock(jsonResponse({ data: { id: 'provider-id', status: 'PENDING' } }));
     const adapter = adapterFor(request);

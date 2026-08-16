@@ -54,7 +54,12 @@ export class SandboxPaymentGatewayAdapter implements PaymentGatewayPort {
 
   async tokenizeCard(input: CardTokenizationInput): Promise<TokenizedCard> {
     const publicKey = await this.getTokenizationPublicKey();
-    const payload = encryptCardAsJwe(input, publicKey);
+    let payload: string;
+    try {
+      payload = encryptCardAsJwe(input, publicKey);
+    } catch {
+      throw new PaymentGatewayError('The payment gateway returned an invalid tokenization key.');
+    }
     const response = await this.fetchJson('/tokens/cards', {
       method: 'POST',
       headers: this.bearerHeaders(this.config.publicKey),
