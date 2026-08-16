@@ -11,6 +11,16 @@ import {
   Post,
   Req,
 } from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiConflictResponse,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { GetTransactionUseCase } from '../../application/checkout/get-transaction.use-case';
 import { CreateTransactionUseCase } from '../../application/checkout/create-transaction.use-case';
@@ -23,6 +33,7 @@ import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { ProcessPaymentDto, TokenizeCardDto } from './dto/process-payment.dto';
 
 @Controller('checkout')
+@ApiTags('Checkout')
 export class CheckoutController {
   constructor(
     private readonly createTransaction: CreateTransactionUseCase,
@@ -32,17 +43,26 @@ export class CheckoutController {
   ) {}
 
   @Get('acceptance-data')
+  @ApiOperation({ summary: 'Get payment acceptance data' })
+  @ApiOkResponse({ description: 'Returns the acceptance tokens and contract links required before payment.' })
   async acceptanceData(): Promise<{ data: Awaited<ReturnType<PaymentGatewayPort['getAcceptanceData']>> }> {
     return { data: await this.paymentGateway.getAcceptanceData() };
   }
 
   @Post('cards/tokenize')
+  @ApiOperation({ summary: 'Tokenize a card using the sandbox gateway' })
+  @ApiCreatedResponse({ description: 'Returns a short-lived card token. Card data is never persisted.' })
+  @ApiBadRequestResponse({ description: 'The card payload is invalid.' })
   async tokenizeCard(@Body() dto: TokenizeCardDto): Promise<{ data: { token: string; brand: string; lastFour: string } }> {
     const tokenizedCard = await this.paymentGateway.tokenizeCard(dto);
     return { data: tokenizedCard };
   }
 
   @Post('transactions')
+  @ApiOperation({ summary: 'Create an idempotent pending checkout transaction' })
+  @ApiCreatedResponse({ description: 'Returns the created transaction and delivery, or the existing transaction for the same idempotency key.' })
+  @ApiBadRequestResponse({ description: 'The checkout payload is invalid.' })
+  @ApiConflictResponse({ description: 'The product is inactive or out of stock.' })
   async create(@Body() dto: CreateTransactionDto): Promise<{ data: TransactionResponse; reused: boolean }> {
     const result = await this.createTransaction.execute({
       productId: dto.productId,
@@ -73,6 +93,10 @@ export class CheckoutController {
   }
 
   @Get('transactions/:transactionId')
+  @ApiOperation({ summary: 'Get a checkout transaction by ID' })
+  @ApiParam({ name: 'transactionId', format: 'uuid' })
+  @ApiOkResponse({ description: 'Returns the transaction and delivery status.' })
+  @ApiNotFoundResponse({ description: 'The transaction does not exist.' })
   async get(@Param('transactionId', new ParseUUIDPipe()) transactionId: string): Promise<{ data: TransactionResponse }> {
     const result = await this.getTransaction.execute(transactionId);
     if (!result.ok) throwResult(result.error.code, result.error.message);
@@ -81,6 +105,12 @@ export class CheckoutController {
 
   @Post('transactions/:transactionId/payments')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Process a tokenized card payment' })
+  @ApiParam({ name: 'transactionId', format: 'uuid' })
+  @ApiOkResponse({ description: 'Returns the payment result and updated checkout status.' })
+  @ApiBadRequestResponse({ description: 'The payment payload is invalid.' })
+  @ApiNotFoundResponse({ description: 'The transaction, customer, or delivery does not exist.' })
+  @ApiConflictResponse({ description: 'The stock changed while processing the payment.' })
   async pay(
     @Param('transactionId', new ParseUUIDPipe()) transactionId: string,
     @Body() dto: ProcessPaymentDto,

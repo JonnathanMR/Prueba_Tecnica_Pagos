@@ -2,6 +2,7 @@ import 'dotenv/config';
 
 import { BadRequestException, ValidationPipe, type ValidationError } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import { AppModule } from './app.module';
 
@@ -24,6 +25,19 @@ async function bootstrap(): Promise<void> {
         }),
     }),
   );
+
+  const openApiConfig = new DocumentBuilder()
+    .setTitle('Payment Checkout API')
+    .setDescription('REST API for the product checkout and payment flow.')
+    .setVersion('1.0.0')
+    .addTag('Health')
+    .addTag('Products')
+    .addTag('Checkout')
+    .build();
+  const openApiDocument = SwaggerModule.createDocument(app, openApiConfig);
+  SwaggerModule.setup('api/docs', app, openApiDocument, {
+    customSiteTitle: 'Payment Checkout API Docs',
+  });
 
   await app.listen(process.env.PORT ?? 3000);
 }

@@ -1,0 +1,74 @@
+{
+  "info": {
+    "_postman_id": "d0b7dba8-707d-4574-bfbe-5d657ac4a48a",
+    "name": "Payment Checkout API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Check API availability",
+          "request": { "method": "GET", "url": "{{baseUrl}}/health" }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "List active products",
+          "event": [{ "listen": "test", "script": { "exec": ["const response = pm.response.json();", "if (response.data?.[0]?.id) pm.environment.set('productId', response.data[0].id);"] } }],
+          "request": { "method": "GET", "url": "{{baseUrl}}/products" }
+        }
+      ]
+    },
+    {
+      "name": "Checkout",
+      "item": [
+        {
+          "name": "Get acceptance data",
+          "event": [{ "listen": "test", "script": { "exec": ["const response = pm.response.json().data;", "pm.environment.set('acceptanceToken', response.acceptanceToken);", "pm.environment.set('acceptPersonalAuth', response.personalDataAuthToken);"] } }],
+          "request": { "method": "GET", "url": "{{baseUrl}}/checkout/acceptance-data" }
+        },
+        {
+          "name": "Tokenize card",
+          "event": [{ "listen": "test", "script": { "exec": ["const response = pm.response.json().data;", "pm.environment.set('cardToken', response.token);", "pm.environment.set('cardBrand', response.brand);", "pm.environment.set('cardLastFour', response.lastFour);"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"number\": \"{{cardNumber}}\",\n  \"cvc\": \"{{cardCvc}}\",\n  \"expMonth\": \"{{cardExpMonth}}\",\n  \"expYear\": \"{{cardExpYear}}\",\n  \"cardHolder\": \"{{cardHolder}}\"\n}" },
+            "url": "{{baseUrl}}/checkout/cards/tokenize"
+          }
+        },
+        {
+          "name": "Create transaction",
+          "event": [{ "listen": "test", "script": { "exec": ["const response = pm.response.json();", "if (response.data?.id) pm.environment.set('transactionId', response.data.id);"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"idempotencyKey\": \"{{$guid}}\",\n  \"baseFeeInCents\": 1500,\n  \"shippingFeeInCents\": 5000,\n  \"customer\": {\n    \"fullName\": \"Ana Pérez\",\n    \"email\": \"ana.perez@example.com\",\n    \"phone\": \"3001234567\"\n  },\n  \"delivery\": {\n    \"recipientName\": \"Ana Pérez\",\n    \"recipientPhone\": \"3001234567\",\n    \"addressLine1\": \"Calle 10 # 20-30\",\n    \"city\": \"Bogotá\",\n    \"department\": \"Cundinamarca\"\n  }\n}" },
+            "url": "{{baseUrl}}/checkout/transactions"
+          }
+        },
+        {
+          "name": "Get transaction",
+          "request": { "method": "GET", "url": "{{baseUrl}}/checkout/transactions/{{transactionId}}" }
+        },
+        {
+          "name": "Process payment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"cardToken\": \"{{cardToken}}\",\n  \"cardBrand\": \"{{cardBrand}}\",\n  \"cardLastFour\": \"{{cardLastFour}}\",\n  \"installments\": 1,\n  \"acceptanceToken\": \"{{acceptanceToken}}\",\n  \"acceptPersonalAuth\": \"{{acceptPersonalAuth}}\"\n}" },
+            "url": "{{baseUrl}}/checkout/transactions/{{transactionId}}/payments"
+          }
+        }
+      ]
+    }
+  ]
+}

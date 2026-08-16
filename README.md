@@ -194,7 +194,11 @@ git check-ignore -v backend/.env
 
 ## Documentación de la API
 
-_TODO — Aquí se enlazará la colección de Postman o la URL pública de Swagger._
+Con el backend iniciado, la documentación interactiva de Swagger está disponible en [http://localhost:3000/api/docs](http://localhost:3000/api/docs). La especificación OpenAPI en JSON se publica en [http://localhost:3000/api/docs-json](http://localhost:3000/api/docs-json).
+
+También puedes importar la [colección de Postman](docs/postman/payment-checkout.postman_collection.json) y su [plantilla de entorno](docs/postman/payment-checkout.local.postman_environment.json). Completa únicamente los valores locales en Postman; no guardes ni exportes credenciales de sandbox en la colección o en el entorno versionado.
+
+Orden sugerido para probar el flujo: `List active products` → `Get acceptance data` → acepta explícitamente los contratos mostrados → `Tokenize card` → `Create transaction` → `Process payment`. La colección guarda automáticamente los identificadores y tokens temporales en el entorno activo.
 
 ## Pruebas (Testing)
 
