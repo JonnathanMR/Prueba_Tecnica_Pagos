@@ -109,6 +109,7 @@ export class PaymentTransaction {
 
   registerProviderReference(
     providerTransactionId: string,
+    paymentMethod: PaymentMethodSnapshot,
     updatedAt = new Date(),
   ): PaymentTransaction {
     this.ensurePending();
@@ -117,6 +118,7 @@ export class PaymentTransaction {
     return new PaymentTransaction({
       ...this,
       providerTransactionId,
+      paymentMethod,
       updatedAt,
     });
   }

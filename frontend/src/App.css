@@ -117,6 +117,24 @@
 .summary-feedback { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 1rem; padding: 1.5rem; text-align: center; }
 .summary-feedback h2 { color: var(--color-ink); font-size: 1.25rem; margin: 0; }
 .summary-feedback p, .summary-loading { color: var(--color-muted); line-height: 1.5; margin: 0.75rem 0 1.25rem; }
+.result-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 1.25rem; box-shadow: 0 1rem 2.5rem rgb(20 31 52 / 8%); padding: clamp(1.5rem, 7vw, 2.5rem); text-align: center; }
+.result-card h1 { color: var(--color-ink); font-size: clamp(1.875rem, 8vw, 2.75rem); letter-spacing: -0.055em; line-height: 1.05; margin: 0; }
+.result-card--success { border-color: #9ed8c5; }
+.result-card--error { border-color: #efb8b4; }
+.result-card--pending { border-color: #d8c390; }
+.result-status-icon { align-items: center; background: var(--color-soft); border-radius: 50%; color: var(--color-primary-dark); display: flex; font-size: 2rem; font-weight: 850; height: 4.5rem; justify-content: center; margin: 0 auto 1.25rem; width: 4.5rem; }
+.result-card--error .result-status-icon { background: #fff0ef; color: #b42318; }
+.result-card--pending .result-status-icon { background: #fff8e5; color: #9a6700; }
+.result-description { color: var(--color-muted); line-height: 1.6; margin: 1rem auto 0; max-width: 34rem; }
+.result-facts { border-top: 1px solid var(--color-border); display: grid; gap: 0.875rem; margin: 1.75rem 0 0; padding-top: 1.25rem; text-align: left; }
+.result-facts > div { align-items: baseline; display: flex; gap: 1rem; justify-content: space-between; }
+.result-facts dt { color: var(--color-muted); font-size: 0.8125rem; }
+.result-facts dd { color: var(--color-ink); font-size: 0.875rem; font-weight: 750; margin: 0; text-align: right; }
+.result-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; margin-top: 1.75rem; }
+.result-refreshing { color: var(--color-muted); font-size: 0.8125rem; margin: 1.25rem 0 0; }
+.result-card--empty p, .result-card--loading p { color: var(--color-muted); line-height: 1.6; margin: 0.75rem 0 1.25rem; }
+.result-spinner { animation: spin 900ms linear infinite; border: 0.25rem solid var(--color-border); border-radius: 50%; border-top-color: var(--color-primary); display: block; height: 2.25rem; margin: 0 auto 1rem; width: 2.25rem; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .product-card--loading { min-height: 23rem; }
 .skeleton { animation: pulse 1.2s ease-in-out infinite alternate; background: #e8eef3; border-radius: 0.5rem; }
 .skeleton-line { display: block; height: 1rem; margin-bottom: 0.8rem; width: 100%; }

@@ -14,6 +14,7 @@ import { PersistenceModule } from '../../infrastructure/persistence/persistence.
 import { GetTransactionUseCase } from './get-transaction.use-case';
 import { CreateTransactionUseCase } from './create-transaction.use-case';
 import { ProcessPaymentUseCase } from './process-payment.use-case';
+import { RefreshPaymentStatusUseCase } from './refresh-payment-status.use-case';
 import { UpdateStockUseCase } from './update-stock.use-case';
 
 export const PAYMENT_GATEWAY = Symbol('PAYMENT_GATEWAY');
@@ -100,6 +101,23 @@ export const PAYMENT_GATEWAY = Symbol('PAYMENT_GATEWAY');
         UpdateStockUseCase,
       ],
     },
+    {
+      provide: RefreshPaymentStatusUseCase,
+      useFactory: (transactionRepository, deliveryRepository, paymentGateway, updateStock) =>
+        new RefreshPaymentStatusUseCase({
+          transactionRepository,
+          deliveryRepository,
+          paymentGateway,
+          updateStock,
+          now: () => new Date(),
+        }),
+      inject: [
+        TRANSACTION_REPOSITORY,
+        DELIVERY_REPOSITORY,
+        PAYMENT_GATEWAY,
+        UpdateStockUseCase,
+      ],
+    },
   ],
   exports: [
     PAYMENT_GATEWAY,
@@ -107,6 +125,7 @@ export const PAYMENT_GATEWAY = Symbol('PAYMENT_GATEWAY');
     CreateTransactionUseCase,
     GetTransactionUseCase,
     ProcessPaymentUseCase,
+    RefreshPaymentStatusUseCase,
   ],
 })
 export class CheckoutModule {}

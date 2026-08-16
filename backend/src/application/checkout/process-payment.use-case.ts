@@ -91,6 +91,7 @@ export class ProcessPaymentUseCase {
       if (gatewayResult.status === 'PENDING') {
         const pendingTransaction = transaction.registerProviderReference(
           gatewayResult.providerTransactionId,
+          input.paymentMethod,
           now,
         );
         await this.dependencies.transactionRepository.save(pendingTransaction);
