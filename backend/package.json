@@ -56,9 +56,17 @@
       ]
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "<rootDir>/application/checkout/**/*.use-case.ts",
+      "<rootDir>/infrastructure/payments/**/*.ts"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "coverageThreshold": {
+      "global": {
+        "statements": 80,
+        "lines": 80,
+        "functions": 80
+      }
+    }
   }
 }
