@@ -13,10 +13,18 @@ export interface DeliveryDraft {
   department: string
 }
 
+export type SafeCardBrand = 'VISA' | 'MASTERCARD'
+
+export interface PaymentDraft {
+  cardBrand: SafeCardBrand | null
+  cardLastFour: string | null
+}
+
 export interface CheckoutState {
   currentStep: CheckoutStep
   selectedProductId: string | null
   delivery: DeliveryDraft
+  payment: PaymentDraft
   transactionReference: string | null
 }
 
@@ -28,10 +36,16 @@ const emptyDeliveryDraft: DeliveryDraft = {
   department: '',
 }
 
+const emptyPaymentDraft: PaymentDraft = {
+  cardBrand: null,
+  cardLastFour: null,
+}
+
 export const initialCheckoutState: CheckoutState = {
   currentStep: 'product',
   selectedProductId: null,
   delivery: emptyDeliveryDraft,
+  payment: emptyPaymentDraft,
   transactionReference: null,
 }
 
@@ -41,6 +55,14 @@ function isCheckoutStep(value: unknown): value is CheckoutStep {
 
 function stringValue(value: unknown): string {
   return typeof value === 'string' ? value : ''
+}
+
+function safeCardBrand(value: unknown): SafeCardBrand | null {
+  return value === 'VISA' || value === 'MASTERCARD' ? value : null
+}
+
+function lastFour(value: unknown): string | null {
+  return typeof value === 'string' && /^\d{4}$/.test(value) ? value : null
 }
 
 export function loadCheckoutState(): CheckoutState {
@@ -55,6 +77,10 @@ export function loadCheckoutState(): CheckoutState {
       typeof draft.delivery === 'object' && draft.delivery !== null
         ? draft.delivery
         : emptyDeliveryDraft
+    const payment =
+      typeof draft.payment === 'object' && draft.payment !== null
+        ? draft.payment
+        : emptyPaymentDraft
 
     return {
       currentStep: isCheckoutStep(draft.currentStep)
@@ -69,6 +95,10 @@ export function loadCheckoutState(): CheckoutState {
         city: stringValue(delivery.city),
         department: stringValue(delivery.department),
       },
+      payment: {
+        cardBrand: safeCardBrand(payment.cardBrand),
+        cardLastFour: lastFour(payment.cardLastFour),
+      },
       transactionReference:
         typeof draft.transactionReference === 'string' ? draft.transactionReference : null,
     }
@@ -79,7 +109,14 @@ export function loadCheckoutState(): CheckoutState {
 
 export function persistCheckoutState(state: CheckoutState): void {
   if (typeof window !== 'undefined') {
-    window.localStorage.setItem(storageKey, JSON.stringify(state))
+    const safeDraft: CheckoutState = {
+      currentStep: state.currentStep,
+      selectedProductId: state.selectedProductId,
+      delivery: state.delivery,
+      payment: state.payment,
+      transactionReference: state.transactionReference,
+    }
+    window.localStorage.setItem(storageKey, JSON.stringify(safeDraft))
   }
 }
 
@@ -96,6 +133,9 @@ const checkoutSlice = createSlice({
     saveDeliveryDraft(state, action: PayloadAction<DeliveryDraft>) {
       state.delivery = action.payload
     },
+    savePaymentDraft(state, action: PayloadAction<PaymentDraft>) {
+      state.payment = action.payload
+    },
     setTransactionReference(state, action: PayloadAction<string | null>) {
       state.transactionReference = action.payload
     },
@@ -109,6 +149,7 @@ export const {
   moveToStep,
   resetCheckout,
   saveDeliveryDraft,
+  savePaymentDraft,
   selectProduct,
   setTransactionReference,
 } = checkoutSlice.actions

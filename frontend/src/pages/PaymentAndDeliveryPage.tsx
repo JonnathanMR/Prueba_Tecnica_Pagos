@@ -7,6 +7,7 @@ import {
   type DeliveryDraft,
   moveToStep,
   saveDeliveryDraft,
+  savePaymentDraft,
 } from '../features/checkout/checkoutSlice'
 import {
   detectCardBrand,
@@ -34,8 +35,13 @@ export function PaymentAndDeliveryPage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const savedDelivery = useAppSelector((state) => state.checkout.delivery)
+  const savedPayment = useAppSelector((state) => state.checkout.payment)
   const [delivery, setDelivery] = useState<DeliveryDraft>(savedDelivery)
-  const [card, setCard] = useState<CardSummary | null>(null)
+  const [card, setCard] = useState<CardSummary | null>(
+    savedPayment.cardBrand && savedPayment.cardLastFour
+      ? { brand: savedPayment.cardBrand, lastFour: savedPayment.cardLastFour }
+      : null,
+  )
   const [isCardDialogOpen, setIsCardDialogOpen] = useState(false)
   const [showDeliveryErrors, setShowDeliveryErrors] = useState(false)
 
@@ -46,7 +52,12 @@ export function PaymentAndDeliveryPage() {
   const isDeliveryComplete = Object.values(delivery).every((value) => value.trim().length > 0) && /^\d{10}$/.test(delivery.phone)
 
   function updateDelivery(field: keyof DeliveryDraft, value: string): void {
-    setDelivery((current) => ({ ...current, [field]: field === 'phone' ? digitsOnly(value).slice(0, 10) : value }))
+    const nextDelivery = {
+      ...delivery,
+      [field]: field === 'phone' ? digitsOnly(value).slice(0, 10) : value,
+    }
+    setDelivery(nextDelivery)
+    dispatch(saveDeliveryDraft(nextDelivery))
   }
 
   function continueToSummary(event: React.FormEvent<HTMLFormElement>): void {
@@ -140,6 +151,7 @@ export function PaymentAndDeliveryPage() {
           onClose={() => setIsCardDialogOpen(false)}
           onSave={(summary) => {
             setCard(summary)
+            dispatch(savePaymentDraft({ cardBrand: summary.brand, cardLastFour: summary.lastFour }))
             setIsCardDialogOpen(false)
           }}
         />
