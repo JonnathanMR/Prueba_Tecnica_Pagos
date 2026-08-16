@@ -13,7 +13,7 @@ export class ProductsController {
   @ApiOkResponse({ description: 'Returns the products available for purchase.' })
   async list(): Promise<{ data: readonly ProductResponse[] }> {
     const products = await this.listProducts.execute();
-    return { data: products.map(toProductResponse) };
+    return { data: products.map(({ product, availableQuantity }) => toProductResponse(product, availableQuantity)) };
   }
 }
 
@@ -24,9 +24,13 @@ interface ProductResponse {
   readonly description: string;
   readonly priceInCents: number;
   readonly currency: 'COP';
+  readonly availableQuantity: number;
 }
 
-function toProductResponse(product: Awaited<ReturnType<ListProductsUseCase['execute']>>[number]): ProductResponse {
+function toProductResponse(
+  product: Awaited<ReturnType<ListProductsUseCase['execute']>>[number]['product'],
+  availableQuantity: number,
+): ProductResponse {
   return {
     id: product.id,
     sku: product.sku,
@@ -34,5 +38,6 @@ function toProductResponse(product: Awaited<ReturnType<ListProductsUseCase['exec
     description: product.description,
     priceInCents: product.priceInCents,
     currency: product.currency,
+    availableQuantity,
   };
 }
