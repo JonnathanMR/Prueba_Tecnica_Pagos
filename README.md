@@ -5,17 +5,23 @@ Flujo de pago en una sola página (*single-page checkout*) enfocado en móviles 
 > Estado: 🚧 En progreso — construido de forma incremental, día a día. Consulta el historial de *commits* para ver el desarrollo completo.
 
 ## Tabla de contenidos
-- [Descripción general](#descripción-general)
-- [Stack tecnológico](#stack-tecnológico)
-- [Estructura del proyecto](#estructura-del-proyecto)
-- [Flujo de negocio](#flujo-de-negocio)
-- [Modelo de datos](#modelo-de-datos)
-- [Primeros pasos](#primeros-pasos)
-- [Variables de entorno](#variables-de-entorno)
-- [Documentación de la API](#documentación-de-la-api)
-- [Pruebas (Testing)](#pruebas-testing)
-- [Despliegue en vivo](#despliegue-en-vivo)
-- [Decisiones de arquitectura](#decisiones-de-arquitectura)
+- [Pasarela de Pago FullStack — Evaluación Técnica](#pasarela-de-pago-fullstack--evaluación-técnica)
+  - [Tabla de contenidos](#tabla-de-contenidos)
+  - [Descripción general](#descripción-general)
+  - [Stack tecnológico](#stack-tecnológico)
+  - [Estructura del proyecto](#estructura-del-proyecto)
+  - [Flujo de negocio](#flujo-de-negocio)
+  - [Modelo de datos](#modelo-de-datos)
+    - [Estados y reglas de integridad](#estados-y-reglas-de-integridad)
+    - [Seguridad de pagos](#seguridad-de-pagos)
+  - [Primeros pasos](#primeros-pasos)
+  - [Variables de entorno](#variables-de-entorno)
+    - [Base de datos local](#base-de-datos-local)
+    - [Pasarela de pago de pruebas](#pasarela-de-pago-de-pruebas)
+  - [Documentación de la API](#documentación-de-la-api)
+  - [Pruebas (Testing)](#pruebas-testing)
+  - [Despliegue en vivo](#despliegue-en-vivo)
+  - [Decisiones de arquitectura](#decisiones-de-arquitectura)
 
 ## Descripción general
 
@@ -71,7 +77,7 @@ erDiagram
     }
     STOCK {
       uuid id PK
-      uuid product_id FK_UK
+      uuid product_id FK, UK
       integer available_quantity
       integer stock_version
     }
@@ -96,7 +102,7 @@ erDiagram
     }
     DELIVERY {
       uuid id PK
-      uuid transaction_id FK_UK
+      uuid transaction_id FK, UK
       varchar recipient_name
       varchar address_line_1
       varchar city
@@ -108,7 +114,7 @@ erDiagram
 | Entidad | Propósito y campos principales |
 |---|---|
 | `products` | Catálogo sembrado. Incluye `sku` único, nombre, descripción, `price_in_cents`, moneda `COP`, estado activo y auditoría. No se expone un endpoint para crearlo. |
-| `stock` | Relación 1:1 con el producto mediante `product_id` único. Tiene `available_quantity >= 0` y `version` para control optimista de concurrencia. |
+| `stock` | Relación 1:1 con el producto mediante `product_id` único. Tiene `available_quantity >= 0` y `stock_version` para control optimista de concurrencia. |
 | `customers` | Comprador identificado por nombre, email único, teléfono y, si se requiere, tipo y número de documento. |
 | `payment_transactions` | Registro del intento de pago: referencia única, producto, cliente, estado, importes congelados, identificador de la pasarela e `idempotency_key` único. |
 | `deliveries` | Dirección y destinatario de la entrega. Tiene una relación 1:1 con la transacción mediante `transaction_id` único. |
