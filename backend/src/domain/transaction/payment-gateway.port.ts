@@ -23,6 +23,10 @@ export interface CreateCardPaymentInput {
   readonly customerEmail: string;
   readonly cardToken: string;
   readonly idempotencyKey: string;
+  readonly installments: number;
+  readonly acceptanceToken: string;
+  readonly acceptPersonalAuth: string;
+  readonly customerIp: string;
 }
 
 export interface GatewayPaymentResult {
@@ -32,7 +36,15 @@ export interface GatewayPaymentResult {
   readonly failureMessage: string | null;
 }
 
+export interface AcceptanceData {
+  readonly acceptanceToken: string;
+  readonly acceptancePermalink: string;
+  readonly personalDataAuthToken: string;
+  readonly personalDataAuthPermalink: string;
+}
+
 export interface PaymentGatewayPort {
+  getAcceptanceData(): Promise<AcceptanceData>;
   tokenizeCard(input: CardTokenizationInput): Promise<TokenizedCard>;
   createCardPayment(input: CreateCardPaymentInput): Promise<GatewayPaymentResult>;
   findPayment(providerTransactionId: string): Promise<GatewayPaymentResult>;

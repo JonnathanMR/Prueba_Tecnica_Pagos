@@ -73,7 +73,7 @@ erDiagram
       uuid id PK
       uuid product_id FK_UK
       integer available_quantity
-      integer version
+      integer stock_version
     }
     CUSTOMER {
       uuid id PK
@@ -147,7 +147,44 @@ La aplicación **no almacena** número completo de tarjeta (PAN), CVV ni fecha d
 
 ## Variables de entorno
 
-El backend incluye [`.env.example`](backend/.env.example) con las credenciales locales de PostgreSQL. No subas el archivo `.env`; contiene los valores de cada entorno.
+El backend incluye [`.env.example`](backend/.env.example) como plantilla. Crea tu configuración local desde la carpeta `backend`:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+`backend/.env` está ignorado por Git y nunca debe subirse. Tampoco se deben incluir claves reales en `.env.example`, código fuente, capturas de pantalla o logs.
+
+### Base de datos local
+
+Con el servicio `database` de Docker iniciado, conserva los valores incluidos en la plantilla:
+
+| Variable | Valor local |
+|---|---|
+| `DB_HOST` | `localhost` |
+| `DB_PORT` | `5432` |
+| `DB_USERNAME` | `payment_user` |
+| `DB_PASSWORD` | `payment_password` |
+| `DB_NAME` | `payment_checkout` |
+
+### Pasarela de pago de pruebas
+
+Completa solo tu archivo local `backend/.env` con los datos del apartado **Herramientas de prueba (UAT)** del documento de la prueba. No copies los valores a este README ni a `.env.example`.
+
+| Variable en `backend/.env` | Valor del documento que debes usar |
+|---|---|
+| `PAYMENT_GATEWAY_BASE_URL` | `UAT_SANDBOX_URL` |
+| `PAYMENT_GATEWAY_PUBLIC_KEY` | Llave pública de sandbox, identificada con el prefijo `pub_stagtest_` |
+| `PAYMENT_GATEWAY_PRIVATE_KEY` | Llave privada de sandbox, identificada con el prefijo `prv_stagtest_` |
+| `PAYMENT_GATEWAY_INTEGRITY_SECRET` | Secreto de integridad de sandbox, identificado con el prefijo `stagtest_integrity_` |
+
+No uses aquí la URL de UAT que no sea sandbox, las credenciales de acceso al portal ni la clave de eventos: no las requiere este adaptador. La clave de eventos se usará más adelante al implementar la validación de eventos o *webhooks*.
+
+Tras guardar `.env`, reinicia el backend para cargar las variables. Puedes comprobar que Git lo ignora con:
+
+```powershell
+git check-ignore -v backend/.env
+```
 
 ## Documentación de la API
 
