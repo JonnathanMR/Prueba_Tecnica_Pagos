@@ -251,6 +251,21 @@ El frontend y la API están desplegados en AWS. El frontend se publica con S3 pr
 
 CloudFront es el único autorizado a leer los archivos del bucket S3 y la API solo admite solicitudes CORS desde la URL pública del frontend.
 
+### Registro de uso de la API
+
+Cada solicitud HTTP a la API genera un evento estructurado en el grupo de CloudWatch `/ecs/payment-checkout-api`. El registro incluye `event`, `requestId`, método, ruta, código de respuesta y duración en milisegundos. No registra cuerpos de petición, parámetros de consulta, encabezados, direcciones IP, correos, direcciones, tarjetas ni tokens.
+
+Para ver solicitudes nuevas desde PowerShell:
+
+```powershell
+aws logs tail '/ecs/payment-checkout-api' `
+  --follow `
+  --format short `
+  --profile payment-checkout-deployer
+```
+
+También se puede consultar en la consola de AWS: **CloudWatch → Log groups → `/ecs/payment-checkout-api`**. El encabezado de respuesta `X-Request-Id` permite relacionar una respuesta concreta con su evento de registro.
+
 ### Configuración del frontend para AWS
 
 El archivo [`.env.example`](frontend/.env.example) contiene la variable de compilación del frontend:

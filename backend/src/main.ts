@@ -13,10 +13,13 @@ import {
   securityHeaders,
   shouldEnforceHttps,
 } from './infrastructure/http/security.config';
+import { requestUsageLogger } from './infrastructure/http/request-usage-logger.middleware';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   const enforceHttps = shouldEnforceHttps(process.env.ENFORCE_HTTPS, process.env.NODE_ENV);
+
+  app.use(requestUsageLogger());
 
   if (enforceHttps) {
     app.getHttpAdapter().getInstance().set('trust proxy', 1);
@@ -34,6 +37,7 @@ async function bootstrap(): Promise<void> {
     origin: allowedCorsOrigins(process.env.CORS_ORIGINS, process.env.NODE_ENV),
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['X-Request-Id'],
     credentials: false,
     maxAge: 86_400,
   });
