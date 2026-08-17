@@ -9,9 +9,12 @@
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/infrastructure/persistence/typeorm/data-source.ts",
+    "migration:run:prod": "typeorm migration:run -d dist/infrastructure/persistence/typeorm/data-source.js",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/infrastructure/persistence/typeorm/data-source.ts",
     "seed:products": "ts-node src/infrastructure/persistence/typeorm/seeds/seed-products.ts",
+    "seed:products:prod": "node dist/infrastructure/persistence/typeorm/seeds/seed-products.js",
     "database:setup": "npm run migration:run && npm run seed:products",
+    "database:setup:prod": "npm run migration:run:prod && npm run seed:products:prod",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage"

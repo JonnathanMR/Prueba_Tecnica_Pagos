@@ -172,6 +172,8 @@ Con el servicio `database` de Docker iniciado, conserva los valores incluidos en
 | `DB_USERNAME` | `payment_user` |
 | `DB_PASSWORD` | `payment_password` |
 | `DB_NAME` | `payment_checkout` |
+| `DB_SSL` | `false` |
+| `DB_SSL_CA_PATH` | _(vacío)_ |
 
 ### Pasarela de pago de pruebas
 
@@ -199,9 +201,9 @@ La API aplica `helmet`, una política de contenido compatible con Swagger, prote
 | Variable | Uso local | Uso en despliegue |
 |---|---|---|
 | `CORS_ORIGINS` | `http://localhost:5173` | URL HTTPS pública del frontend; admite varios orígenes separados por coma. |
-| `ENFORCE_HTTPS` | `false` | `true`; confía en el proxy HTTPS y redirige solicitudes HTTP con código `308`. |
+| `ENFORCE_HTTPS` | `false` | `true` cuando el proxy comunica HTTPS a la API; `false` si CloudFront fuerza HTTPS al visitante y se comunica por HTTP con el ALB. |
 
-En producción, si `ENFORCE_HTTPS` no se define se activa automáticamente. `CORS_ORIGINS` debe contener solo URLs HTTPS. El balanceador o proxy de AWS debe terminar TLS y enviar `X-Forwarded-Proto`.
+En producción, si `ENFORCE_HTTPS` no se define se activa automáticamente. `CORS_ORIGINS` debe contener solo URLs HTTPS. En el despliegue actual, CloudFront redirige a HTTPS al visitante y el ALB recibe las solicitudes internas por HTTP, por lo que se establece explícitamente `ENFORCE_HTTPS=false`. El ALB exige una cabecera secreta que solo inyecta CloudFront; el acceso directo al ALB devuelve `403`.
 
 ## Documentación de la API
 
@@ -238,7 +240,32 @@ Ejecuta los comandos desde `backend/` y `frontend/`, respectivamente. El reporte
 
 ## Despliegue en vivo
 
-_TODO — Los enlaces de AWS (API + frontend) se agregarán en la entrega final._
+La API está desplegada en AWS mediante CloudFront, Application Load Balancer, ECS/Fargate y RDS PostgreSQL:
+
+- API: [https://d2q2vq7xjn7t7p.cloudfront.net](https://d2q2vq7xjn7t7p.cloudfront.net)
+- Salud: [https://d2q2vq7xjn7t7p.cloudfront.net/api/health](https://d2q2vq7xjn7t7p.cloudfront.net/api/health)
+- Swagger: [https://d2q2vq7xjn7t7p.cloudfront.net/api/docs](https://d2q2vq7xjn7t7p.cloudfront.net/api/docs)
+
+El frontend se agregará después de su despliegue y su URL HTTPS sustituirá el origen CORS provisional de la tarea de ECS.
+
+### Preparación del backend para AWS
+
+La API se empaqueta desde `backend/` con un contenedor Node 24 y verifica su disponibilidad en `GET /api/health`:
+
+```bash
+docker build -t payment-checkout-api ./backend
+docker run --rm -p 3000:3000 --env-file backend/.env -e DB_HOST=host.docker.internal payment-checkout-api
+```
+
+`host.docker.internal` permite que el contenedor local acceda al PostgreSQL publicado por Docker Desktop; en AWS se reemplaza con el endpoint privado de RDS.
+
+Para RDS, define las credenciales de la instancia como secretos de la plataforma y configura `DB_SSL=true` junto con `DB_SSL_CA_PATH=/app/certs/rds-global-bundle.pem`; la imagen incorpora el paquete de certificados raíz de Amazon RDS y la aplicación valida el certificado del servidor. Después de publicar la imagen, ejecuta una única tarea de inicialización contra RDS antes de levantar las réplicas de la API:
+
+```bash
+npm run database:setup:prod
+```
+
+Ese comando usa el código compilado, aplica las migraciones pendientes y ejecuta el seed idempotente de productos. No incluyas claves de sandbox ni credenciales de RDS en la imagen, el repositorio o los archivos de definición de tareas.
 
 ## Decisiones de arquitectura
 
