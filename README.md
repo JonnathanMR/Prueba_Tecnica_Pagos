@@ -2,8 +2,6 @@
 
 Flujo de pago en una sola página (*single-page checkout*) enfocado en móviles (*mobile-first*) para un único producto: listado de productos → tarjeta de crédito e información de entrega → resumen del pago → resultado de la transacción, respaldado por una API REST con arquitectura hexagonal.
 
-> Estado: 🚧 En progreso — construido de forma incremental, día a día. Consulta el historial de *commits* para ver el desarrollo completo.
-
 ## Tabla de contenidos
 - [Pasarela de Pago FullStack — Evaluación Técnica](#pasarela-de-pago-fullstack--evaluación-técnica)
   - [Tabla de contenidos](#tabla-de-contenidos)
