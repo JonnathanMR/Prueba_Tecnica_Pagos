@@ -270,8 +270,7 @@ aws logs tail '/ecs/payment-checkout-api' `
   --follow `
   --format short `
   --filter-pattern '"api.request"' `
-  --profile payment-checkout-deployer |
-  Where-Object { $_ -notmatch '"path":"/api/health"' }
+  --profile payment-checkout-deployer
 ```
 
 También se puede consultar en la consola de AWS: **CloudWatch → Log groups → `/ecs/payment-checkout-api`**. El encabezado de respuesta `X-Request-Id` permite relacionar una respuesta concreta con su evento de registro.
