@@ -24,6 +24,7 @@ Flujo de pago en una sola página (*single-page checkout*) enfocado en móviles 
     - [Tarjetas de prueba](#tarjetas-de-prueba)
     - [Cobertura](#cobertura)
   - [Despliegue en vivo](#despliegue-en-vivo)
+    - [Verificación final](#verificación-final)
     - [Registro de uso de la API](#registro-de-uso-de-la-api)
     - [Configuración del frontend para AWS](#configuración-del-frontend-para-aws)
     - [Preparación del backend para AWS](#preparación-del-backend-para-aws)
@@ -265,6 +266,14 @@ La entrega fue verificada en producción el 16 de agosto de 2026:
 - Frontend: catálogo, selección de producto, navegación a `/checkout` y recarga directa de esa ruta SPA.
 - API: disponibilidad, CORS desde el frontend publicado y documentación Swagger.
 - Observabilidad: CloudWatch recibe solicitudes de API y el evento anónimo de apertura del frontend.
+
+Ejemplo de observabilidad:
+
+```
+2026-08-17T03:47:34 [Nest] 1  - 08/17/2026, 3:47:34 AM     LOG [ApiUsage] {"event":"api.request","requestId":"0625972a-b174-437e-aef9-2a60806ae74a","method":"GET","path":"/api/checkout/transactions/f0f3bce4-a877-4e52-9383-25e6215190c3","statusCode":200,"durationMs":108}
+2026-08-17T03:47:38 [Nest] 1  - 08/17/2026, 3:47:38 AM     LOG [ApiUsage] {"event":"api.request","requestId":"4393236e-b9e6-4c1e-9b06-c790906e43ee","method":"GET","path":"/api/checkout/transactions/f0f3bce4-a877-4e52-9383-25e6215190c3","statusCode":200,"durationMs":83}
+2026-08-17T03:47:41 [Nest] 1  - 08/17/2026, 3:47:41 AM     LOG [ApiUsage] {"event":"api.request","requestId":"912af408-5e6a-4840-98b7-a0a900a5bb34","method":"GET","path":"/api/products","statusCode":200,"durationMs":115}
+```
 
 ### Registro de uso de la API
 
