@@ -34,7 +34,7 @@ Este proyecto implementa el flujo de *onboarding* para un cliente que compra un 
 | Frontend | React + Redux Toolkit (arquitectura Flux) |
 | Backend | NestJS — Arquitectura Hexagonal (Puertos y Adaptadores) |
 | Base de datos | PostgreSQL |
-| Pruebas | Jest (meta: >80% de cobertura, front y back) |
+| Pruebas | Jest + Vitest (meta: >80% de cobertura, front y back) |
 | Despliegue | AWS |
 
 ## Estructura del proyecto
@@ -214,7 +214,16 @@ Usa estos datos únicamente en el entorno sandbox. No ingreses ni compartas tarj
 
 El proveedor solo publica las dos tarjetas Visa anteriores para su flujo sandbox directo; cualquier otra tarjeta puede finalizar en `ERROR`. La tarjeta Mastercard de la tabla sirve exclusivamente para comprobar la detección y validación local de la interfaz. Consulta los [datos de prueba oficiales de sandbox](https://docs.wompi.co/docs/colombia/datos-de-prueba-en-sandbox/) antes de realizar una prueba de pago.
 
-_TODO — Aquí se documentará el informe de cobertura (backend y frontend)._
+### Cobertura
+
+La cobertura se ejecuta localmente y aplica un umbral mínimo de 80 % para sentencias, funciones y líneas en los módulos cubiertos. El backend prueba los casos de uso de checkout y el adaptador de pasarela; el frontend cubre los módulos de checkout, pagos, productos y la página de catálogo.
+
+| Proyecto | Comando | Pruebas | Sentencias | Ramas | Funciones | Líneas |
+|---|---|---:|---:|---:|---:|---:|
+| Backend | `npm run test:cov -- --runInBand` | 24 | 85.84 % | 66.66 % | 96.87 % | 90.50 % |
+| Frontend | `npm run test:cov` | 17 | 89.37 % | 81.02 % | 87.27 % | 92.75 % |
+
+Ejecuta los comandos desde `backend/` y `frontend/`, respectivamente. El reporte HTML se genera localmente en la carpeta `coverage/` de cada proyecto y no se versiona.
 
 ## Despliegue en vivo
 
