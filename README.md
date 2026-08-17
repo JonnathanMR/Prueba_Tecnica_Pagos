@@ -257,6 +257,15 @@ El frontend y la API están desplegados en AWS. El frontend se publica con S3 pr
 
 CloudFront es el único autorizado a leer los archivos del bucket S3 y la API solo admite solicitudes CORS desde la URL pública del frontend.
 
+### Verificación final
+
+La entrega fue verificada en producción el 16 de agosto de 2026:
+
+- Navegadores: Chrome, Firefox, Edge y Safari en iPhone 15 Pro Max.
+- Frontend: catálogo, selección de producto, navegación a `/checkout` y recarga directa de esa ruta SPA.
+- API: disponibilidad, CORS desde el frontend publicado y documentación Swagger.
+- Observabilidad: CloudWatch recibe solicitudes de API y el evento anónimo de apertura del frontend.
+
 ### Registro de uso de la API
 
 Cada solicitud HTTP a la API genera un evento estructurado en el grupo de CloudWatch `/ecs/payment-checkout-api`. El registro incluye `event`, `requestId`, método, ruta, código de respuesta y duración en milisegundos. No registra cuerpos de petición, parámetros de consulta, encabezados, direcciones IP, correos, direcciones, tarjetas ni tokens.
