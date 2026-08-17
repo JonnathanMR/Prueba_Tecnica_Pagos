@@ -13,7 +13,7 @@ interface ProductsResponse {
 }
 
 export async function fetchProducts(signal?: AbortSignal): Promise<readonly ProductSummary[]> {
-  const response = await fetch('/api/products', { signal })
+  const response = await fetch(apiUrl('/api/products'), { signal })
   if (!response.ok) throw new Error('No pudimos cargar los productos. Inténtalo de nuevo.')
 
   const payload = (await response.json()) as ProductsResponse
@@ -21,3 +21,4 @@ export async function fetchProducts(signal?: AbortSignal): Promise<readonly Prod
 
   return payload.data
 }
+import { apiUrl } from '../../config/api-url'

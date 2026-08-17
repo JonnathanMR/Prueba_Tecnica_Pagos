@@ -1,4 +1,5 @@
 import type { SafeCardBrand } from './checkoutSlice'
+import { apiUrl } from '../../config/api-url'
 
 export interface AcceptanceData {
   readonly acceptanceToken: string
@@ -124,7 +125,7 @@ export async function getTransaction(transactionId: string, signal?: AbortSignal
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(path, {
+  const response = await fetch(apiUrl(path), {
     ...init,
     headers: { 'Content-Type': 'application/json', ...init.headers },
   })
