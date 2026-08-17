@@ -192,6 +192,17 @@ Tras guardar `.env`, reinicia el backend para cargar las variables. Puedes compr
 git check-ignore -v backend/.env
 ```
 
+### Seguridad HTTP
+
+La API aplica `helmet`, una política de contenido compatible con Swagger, protección contra *clickjacking* y *MIME sniffing*, `Referrer-Policy`, `Permissions-Policy` y `Cache-Control: no-store` para las rutas de checkout. CORS usa una lista explícita de orígenes; nunca se habilita con `*`.
+
+| Variable | Uso local | Uso en despliegue |
+|---|---|---|
+| `CORS_ORIGINS` | `http://localhost:5173` | URL HTTPS pública del frontend; admite varios orígenes separados por coma. |
+| `ENFORCE_HTTPS` | `false` | `true`; confía en el proxy HTTPS y redirige solicitudes HTTP con código `308`. |
+
+En producción, si `ENFORCE_HTTPS` no se define se activa automáticamente. `CORS_ORIGINS` debe contener solo URLs HTTPS. El balanceador o proxy de AWS debe terminar TLS y enviar `X-Forwarded-Proto`.
+
 ## Documentación de la API
 
 Con el backend iniciado, la documentación interactiva de Swagger está disponible en [http://localhost:3000/api/docs](http://localhost:3000/api/docs). La especificación OpenAPI en JSON se publica en [http://localhost:3000/api/docs-json](http://localhost:3000/api/docs-json).
