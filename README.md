@@ -18,9 +18,15 @@ Flujo de pago en una sola página (*single-page checkout*) enfocado en móviles 
   - [Variables de entorno](#variables-de-entorno)
     - [Base de datos local](#base-de-datos-local)
     - [Pasarela de pago de pruebas](#pasarela-de-pago-de-pruebas)
+    - [Seguridad HTTP](#seguridad-http)
   - [Documentación de la API](#documentación-de-la-api)
   - [Pruebas (Testing)](#pruebas-testing)
+    - [Tarjetas de prueba](#tarjetas-de-prueba)
+    - [Cobertura](#cobertura)
   - [Despliegue en vivo](#despliegue-en-vivo)
+    - [Registro de uso de la API](#registro-de-uso-de-la-api)
+    - [Configuración del frontend para AWS](#configuración-del-frontend-para-aws)
+    - [Preparación del backend para AWS](#preparación-del-backend-para-aws)
   - [Decisiones de arquitectura](#decisiones-de-arquitectura)
 
 ## Descripción general
@@ -255,13 +261,17 @@ CloudFront es el único autorizado a leer los archivos del bucket S3 y la API so
 
 Cada solicitud HTTP a la API genera un evento estructurado en el grupo de CloudWatch `/ecs/payment-checkout-api`. El registro incluye `event`, `requestId`, método, ruta, código de respuesta y duración en milisegundos. No registra cuerpos de petición, parámetros de consulta, encabezados, direcciones IP, correos, direcciones, tarjetas ni tokens.
 
+Al abrir el frontend se envía una única solicitud anónima `POST /api/telemetry/visits`. Es un evento sin cuerpo y no se almacena ningún identificador del visitante; permite detectar aperturas de la aplicación incluso cuando CloudFront sirve los recursos estáticos desde caché.
+
 Para ver solicitudes nuevas desde PowerShell:
 
 ```powershell
 aws logs tail '/ecs/payment-checkout-api' `
   --follow `
   --format short `
-  --profile payment-checkout-deployer
+  --filter-pattern '"api.request"' `
+  --profile payment-checkout-deployer |
+  Where-Object { $_ -notmatch '"path":"/api/health"' }
 ```
 
 También se puede consultar en la consola de AWS: **CloudWatch → Log groups → `/ecs/payment-checkout-api`**. El encabezado de respuesta `X-Request-Id` permite relacionar una respuesta concreta con su evento de registro.
