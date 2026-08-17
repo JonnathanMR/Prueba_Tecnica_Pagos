@@ -3,11 +3,46 @@ import 'dotenv/config';
 import { BadRequestException, ValidationPipe, type ValidationError } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import type { NextFunction, Request, Response } from 'express';
+import helmet from 'helmet';
 
 import { AppModule } from './app.module';
+import {
+  allowedCorsOrigins,
+  requestUsesHttps,
+  securityHeaders,
+  shouldEnforceHttps,
+} from './infrastructure/http/security.config';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
+  const enforceHttps = shouldEnforceHttps(process.env.ENFORCE_HTTPS, process.env.NODE_ENV);
+
+  if (enforceHttps) {
+    app.getHttpAdapter().getInstance().set('trust proxy', 1);
+    app.use((request: Request, response: Response, next: NextFunction) => {
+      if (requestUsesHttps(request.secure, request.headers['x-forwarded-proto'])) {
+        next();
+        return;
+      }
+
+      response.redirect(308, `https://${request.get('host')}${request.originalUrl}`);
+    });
+  }
+
+  app.enableCors({
+    origin: allowedCorsOrigins(process.env.CORS_ORIGINS, process.env.NODE_ENV),
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: false,
+    maxAge: 86_400,
+  });
+  app.use(helmet(securityHeaders(enforceHttps)));
+  app.use((request: Request, response: Response, next: NextFunction) => {
+    response.setHeader('Permissions-Policy', 'camera=(), geolocation=(), microphone=(), payment=()');
+    if (request.path.startsWith('/api/checkout')) response.setHeader('Cache-Control', 'no-store');
+    next();
+  });
 
   app.setGlobalPrefix('api');
   app.useGlobalPipes(
