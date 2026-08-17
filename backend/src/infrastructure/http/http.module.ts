@@ -5,10 +5,11 @@ import { GetHealthStatusUseCase } from '../../application/health/get-health-stat
 import { CheckoutController } from './checkout.controller';
 import { HealthController } from './health.controller';
 import { ProductsController } from './products.controller';
+import { TelemetryController } from './telemetry.controller';
 
 @Module({
   imports: [CheckoutModule],
-  controllers: [HealthController, ProductsController, CheckoutController],
+  controllers: [HealthController, ProductsController, CheckoutController, TelemetryController],
   providers: [GetHealthStatusUseCase],
 })
 export class HttpModule {}
