@@ -48,6 +48,8 @@ Este proyecto implementa el flujo de *onboarding* para un cliente que compra un 
 
 El backend inicia con `npm install` y `npm run start:dev` desde `backend/`. Sus adaptadores HTTP viven en `src/infrastructure/http`, los casos de uso en `src/application` y el dominio permanece independiente del framework en `src/domain`.
 
+El frontend se inicia con `npm install` y `npm run dev` desde `frontend/`. Durante el desarrollo local usa el proxy de Vite; para compilarlo contra una API remota, define `VITE_API_BASE_URL` con la URL HTTPS pública de esa API.
+
 ## Flujo de negocio
 
 Esta aplicación sigue un flujo de 5 pantallas:
@@ -203,7 +205,7 @@ La API aplica `helmet`, una política de contenido compatible con Swagger, prote
 | `CORS_ORIGINS` | `http://localhost:5173` | URL HTTPS pública del frontend; admite varios orígenes separados por coma. |
 | `ENFORCE_HTTPS` | `false` | `true` cuando el proxy comunica HTTPS a la API; `false` si CloudFront fuerza HTTPS al visitante y se comunica por HTTP con el ALB. |
 
-En producción, si `ENFORCE_HTTPS` no se define se activa automáticamente. `CORS_ORIGINS` debe contener solo URLs HTTPS. En el despliegue actual, CloudFront redirige a HTTPS al visitante y el ALB recibe las solicitudes internas por HTTP, por lo que se establece explícitamente `ENFORCE_HTTPS=false`. El ALB exige una cabecera secreta que solo inyecta CloudFront; el acceso directo al ALB devuelve `403`.
+En producción, si `ENFORCE_HTTPS` no se define se activa automáticamente. `CORS_ORIGINS` debe contener solo URLs HTTPS. En el despliegue actual usa `https://d3a4r5gjaj9scx.cloudfront.net`. CloudFront redirige a HTTPS al visitante y el ALB recibe las solicitudes internas por HTTP, por lo que se establece explícitamente `ENFORCE_HTTPS=false`. El ALB exige una cabecera secreta que solo inyecta CloudFront; el acceso directo al ALB devuelve `403`.
 
 ## Documentación de la API
 
@@ -240,13 +242,24 @@ Ejecuta los comandos desde `backend/` y `frontend/`, respectivamente. El reporte
 
 ## Despliegue en vivo
 
-La API está desplegada en AWS mediante CloudFront, Application Load Balancer, ECS/Fargate y RDS PostgreSQL:
+El frontend y la API están desplegados en AWS. El frontend se publica con S3 privado y CloudFront; la API usa CloudFront, Application Load Balancer, ECS/Fargate y RDS PostgreSQL:
 
+- Frontend: [https://d3a4r5gjaj9scx.cloudfront.net](https://d3a4r5gjaj9scx.cloudfront.net)
 - API: [https://d2q2vq7xjn7t7p.cloudfront.net](https://d2q2vq7xjn7t7p.cloudfront.net)
 - Salud: [https://d2q2vq7xjn7t7p.cloudfront.net/api/health](https://d2q2vq7xjn7t7p.cloudfront.net/api/health)
 - Swagger: [https://d2q2vq7xjn7t7p.cloudfront.net/api/docs](https://d2q2vq7xjn7t7p.cloudfront.net/api/docs)
 
-El frontend se agregará después de su despliegue y su URL HTTPS sustituirá el origen CORS provisional de la tarea de ECS.
+CloudFront es el único autorizado a leer los archivos del bucket S3 y la API solo admite solicitudes CORS desde la URL pública del frontend.
+
+### Configuración del frontend para AWS
+
+El archivo [`.env.example`](frontend/.env.example) contiene la variable de compilación del frontend:
+
+| Variable | Desarrollo local | Despliegue |
+|---|---|---|
+| `VITE_API_BASE_URL` | Vacía; Vite redirige `/api` a `localhost:3000`. | `https://d2q2vq7xjn7t7p.cloudfront.net` (sin barra final). |
+
+Esta variable no es un secreto: Vite la incorpora en los archivos estáticos durante `npm run build`. Las credenciales de la pasarela y de RDS permanecen exclusivamente en el backend.
 
 ### Preparación del backend para AWS
 
